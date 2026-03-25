@@ -1,0 +1,9 @@
+node_modules/
+asm
+emu
+*.exe
+*.obj
+*.lst
+*.log
+*.asm
+*.trace

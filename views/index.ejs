@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.min.css">
+    <style>
+        pre::-webkit-scrollbar { width: 6px; height: 6px; }
+        pre::-webkit-scrollbar-thumb { background: #3e3e3e; border-radius: 10px; }
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; padding: 20px; }
+        #modal-content-container { background: #0f0f0f; height: 100%; border: 1px solid #444; display: flex; flex-direction: column; border-radius: 4px; }
+        .expand-trigger { cursor: pointer; padding: 2px; border-radius: 4px; transition: background 0.2s; }
+        .expand-trigger:hover { background: rgba(255,255,255,0.1); }
+        .action-btn { font-size: 10px; padding: 2px 8px; border-radius: 4px; transition: all 0.2s; text-transform: uppercase; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-[#1e1e1e] text-gray-300 h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-[#2d2d2d] border-b border-[#3e3e3e] p-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <i class="lucide-cpu text-blue-500"></i>
+            <span class="font-bold text-white text-lg">SIMPLEX <span class="text-blue-400">IDE</span></span>
+        </div>
+        <div id="runBtn" class="cursor-pointer bg-[#24a148] hover:bg-[#1d8039] text-white px-6 py-1.5 rounded-md font-bold flex items-center gap-2 transition-all select-none">
+            <i class="lucide-play size-4"></i> Run
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <div class="w-1/2 flex flex-col border-r border-[#3e3e3e]">
+            <div class="bg-[#2d2d2d] px-4 py-2 flex items-center justify-between border-b border-[#3e3e3e]">
+                <div class="flex items-center gap-2 text-xs font-semibold uppercase">
+                    <i class="lucide-file-code size-4 text-blue-400"></i> main.asm
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="loadFile()" class="action-btn bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 border border-blue-800/50">Load</button>
+                    <button onclick="saveFile()" class="action-btn bg-green-900/30 hover:bg-green-900/50 text-green-400 border border-green-800/50">Save</button>
+                    <button onclick="clearStorage()" class="action-btn bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800/50">Clear Storage</button>
+                </div>
+            </div>
+            <div id="editor" class="flex-1"></div>
+        </div>
+
+        <div class="w-1/2 flex flex-col bg-[#141414]">
+            <div class="h-1/2 flex flex-col border-b border-[#3e3e3e]">
+                <div class="bg-[#2d2d2d] px-4 py-2 text-xs font-semibold uppercase flex items-center justify-between">
+                    <div class="flex items-center gap-2"><i class="lucide-list-checks size-4 text-yellow-500"></i> Assembly Log</div>
+                    <div class="expand-trigger" onclick="expandView('listing', 'Assembly Log & Listing', 'text-gray-400')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M21 3v6h-6M3 21v-6h6M21 21v-6h-6M3 3v6h6"/></svg>
+                    </div>
+                </div>
+                <pre id="listing" class="flex-1 p-4 font-mono text-[11px] overflow-auto text-gray-400 leading-relaxed"></pre>
+            </div>
+
+            <div class="h-1/2 flex flex-col">
+                <div class="bg-[#2d2d2d] px-4 py-2 text-xs font-semibold uppercase flex items-center gap-2">
+                    <i class="lucide-terminal size-4 text-green-500"></i> Emulator Dumps
+                </div>
+                <div class="flex-1 flex overflow-hidden">
+                    <div class="w-1/2 border-r border-[#3e3e3e] flex flex-col">
+                        <div class="text-[9px] px-4 py-1 bg-[#1a1a1a] text-gray-500 border-b border-[#3e3e3e] flex justify-between items-center">
+                            <span>STEP-BY-STEP TRACE (.trace)</span>
+                            <div class="expand-trigger" onclick="expandView('trace-box', 'Execution Trace File', 'text-blue-400')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3v6h-6M3 21v-6h6M21 21v-6h-6M3 3v6h6"/></svg>
+                            </div>
+                        </div>
+                        <pre id="trace-box" class="flex-1 p-4 font-mono text-[10px] overflow-auto text-blue-400"></pre>
+                    </div>
+                    <div class="w-1/2 flex flex-col">
+                        <div class="text-[9px] px-4 py-1 bg-[#1a1a1a] text-gray-500 border-b border-[#3e3e3e] flex justify-between items-center">
+                            <span>EMULATOR STDOUT</span>
+                            <div class="expand-trigger" onclick="expandView('stdout-box', 'Emulator Console Output', 'text-green-400')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3v6h-6M3 21v-6h6M21 21v-6h-6M3 3v6h6"/></svg>
+                            </div>
+                        </div>
+                        <pre id="stdout-box" class="flex-1 p-4 font-mono text-[10px] overflow-auto text-green-400"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-overlay" onclick="closeModal()">
+        <div id="modal-content-container" onclick="event.stopPropagation()">
+            <div class="bg-[#2d2d2d] px-6 py-3 flex justify-between items-center border-b border-[#3e3e3e]">
+                <span id="modal-title" class="text-xs font-bold uppercase tracking-widest text-white">Full View</span>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <pre id="modal-body" class="flex-1 p-8 font-mono text-[13px] overflow-auto leading-relaxed"></pre>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" class="hidden" accept=".asm,.txt" onchange="handleFileSelect(event)">
+
+<script>
+    let editor;
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+    window.addEventListener('keydown', (e) => { if(e.key === "Escape") closeModal(); });
+    function loadFile() { document.getElementById('fileInput').click(); }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => { editor.setValue(e.target.result); localStorage.setItem('simplex_asm_code', e.target.result); };
+        reader.readAsText(file);
+    }
+
+    function saveFile() {
+        const blob = new Blob([editor.getValue()], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = 'main.asm';
+        a.click();
+    }
+
+    function expandView(sourceId, title, colorClass) {
+        const content = document.getElementById(sourceId).textContent;
+        if (!content || content.startsWith(">>")) return;
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-body').textContent = content;
+        document.getElementById('modal-body').className = `flex-1 p-8 font-mono text-[13px] overflow-auto leading-relaxed ${colorClass}`;
+        document.getElementById('modal-overlay').style.display = 'block';
+    }
+
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+        const defaultCode = `<%- initialCode %>`;
+        editor = monaco.editor.create(document.getElementById('editor'), {
+            value: localStorage.getItem('simplex_asm_code') || defaultCode, 
+            language: 'ini', theme: 'vs-dark', fontSize: 13, automaticLayout: true, minimap: { enabled: false }
+        });
+        editor.onDidChangeModelContent(() => { localStorage.setItem('simplex_asm_code', editor.getValue()); });
+        document.getElementById('runBtn').addEventListener('click', runCode);
+    });
+
+    async function runCode() {
+        const listingBox = document.getElementById('listing');
+        const traceBox = document.getElementById('trace-box');
+        const stdoutBox = document.getElementById('stdout-box');
+        
+        listingBox.textContent = ">> Assembling..."; traceBox.textContent = ">> Generating Trace..."; stdoutBox.textContent = ">> Executing...";
+        
+        try {
+            const response = await fetch('/assemble', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: editor.getValue() })
+            });
+            const data = await response.json();
+            if (data.error) {
+                listingBox.innerHTML = `<span style="color: #ff5555;">ERROR:</span>\n${data.message}`;
+                traceBox.textContent = ""; stdoutBox.textContent = "";
+            } else {
+                listingBox.textContent = data.listing;
+                traceBox.textContent = data.trace;
+                stdoutBox.textContent = data.emulatorOutput;
+            }
+        } catch (err) { listingBox.textContent = ">> CONNECTION ERROR"; }
+    }
+
+    function clearStorage() { localStorage.removeItem('simplex_asm_code'); location.reload(); }
+</script>
+</body>
+</html>
