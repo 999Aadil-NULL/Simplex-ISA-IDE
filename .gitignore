@@ -1,9 +1,21 @@
+# Node.js
 node_modules/
+npm-debug.log
+
+# C++ Binaries & Objects
 asm
 emu
-*.exe
+asm.exe
+emu.exe
+*.o
 *.obj
+
+# Generated SIMPLEX Toolchain Files
 *.lst
 *.log
-*.asm
 *.trace
+main_*.asm
+main_*.obj
+main_*.lst
+main_*.trace
+main_*.log
