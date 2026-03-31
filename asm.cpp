@@ -35,9 +35,8 @@ void printHex(int value)
 
 void trimmer(string &label)
 {
-    // Add \r to the list of characters to trim so that we can handle in case of Linux-Style line endings 
-    label.erase(0, label.find_first_not_of(" \t\r\n")); 
-    label.erase(label.find_last_not_of(" \t\r\n") + 1);
+    label.erase(0,label.find_first_not_of(" \t")); // Front Trimming
+    label.erase(label.find_last_not_of(" \t") + 1);// Back Trimming
 }
 //For Valid Label Indentifier
 bool label_validator(string &label)
@@ -125,6 +124,7 @@ int main(int argc, char* argv[])
     //Single pass
     while (getline(file, line)) 
     {
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
         line_num++; // Track every line for error reporting 
 
         //Removing Comment
@@ -237,6 +237,7 @@ int main(int argc, char* argv[])
 
     while (getline(file, line)) 
     {
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
         line_num++;
 
         //Remove comments
