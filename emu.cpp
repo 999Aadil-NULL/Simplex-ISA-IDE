@@ -90,9 +90,10 @@ int main(int argc, char* argv[])
     }
     obj.close();
 
-    //PHASE 1: Initial Dump (For Left Pane)
-    cout << "--- INITIAL MEMORY DUMP ---\n";
-    dump_memory(memory);
+    if(program_size == MEM_SIZE && obj.peek() != EOF)
+    {
+        cerr << "Warning: Program size exceeds memory limit. Only first " << MEM_SIZE << " words loaded." << endl;  
+    }
 
     //THE MARKER
     cout << "\n--- SIMPLEX Execution Started ---\n";
@@ -262,6 +263,10 @@ int main(int argc, char* argv[])
                 cout << " PC=" << hex << pc << " SP=" << sp  << endl;
 
 
+                //Initial Dump (For Left Pane)
+                cout << "--- INITIAL MEMORY DUMP ---\n";
+                dump_memory(memory);
+                //Final Dump (For Right Pane)
                 cout << "\n--- FINAL MEMORY DUMP ---\n";
                 halted = true;
                 dump_memory(memory);
@@ -273,6 +278,9 @@ int main(int argc, char* argv[])
     //Code gives a final Memory Dump and Output of registers only if there is a HALT statement in the code
     if(!halted)
     {
+        //Initial Dump (For Left Pane)
+        cout << "--- INITIAL MEMORY DUMP ---\n";
+        dump_memory(memory);
         //Final Values of Resgisters and counters.
         cout << "--- Final Values ---\n";
         cout << dec << "A=" << A << " B=" << B;
