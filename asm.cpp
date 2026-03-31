@@ -35,8 +35,9 @@ void printHex(int value)
 
 void trimmer(string &label)
 {
-    label.erase(0,label.find_first_not_of(" \t")); // Front Trimming
-    label.erase(label.find_last_not_of(" \t") + 1);// Back Trimming
+    // Add \r to the list of characters to trim so that we can handle in case of Linux-Style line endings 
+    label.erase(0, label.find_first_not_of(" \t\r\n")); 
+    label.erase(label.find_last_not_of(" \t\r\n") + 1);
 }
 //For Valid Label Indentifier
 bool label_validator(string &label)
